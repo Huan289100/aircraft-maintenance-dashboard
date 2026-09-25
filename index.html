@@ -24,7 +24,7 @@ body{font-family:Arial,sans-serif;margin:0;background:#f4f7fb;color:#172033}
 .chartcard{background:white;padding:18px;border-radius:16px;box-shadow:0 3px 14px #0001;text-align:center}
 .chartcard h2{margin:0 0 4px;font-size:20px}
 .charttotal{font-weight:bold;margin:4px 0 12px;color:#54206e}
-.chartwrap{position:relative;height:320px;max-width:440px;margin:auto}
+.chartwrap{position:relative;height:390px;max-width:520px;margin:auto}
 
 .tablebox{background:white;border-radius:14px;overflow:auto;box-shadow:0 3px 14px #0001}
 table{border-collapse:collapse;width:100%;min-width:1050px}
@@ -40,7 +40,7 @@ th{background:#54206e;color:white;position:sticky;top:0}
  .wrap{padding:12px}
  .hero{padding:18px}
  .charts{grid-template-columns:1fr}
- .chartwrap{height:280px}
+ .chartwrap{height:350px}
 }
 </style>
 </head>
@@ -225,7 +225,7 @@ function renderCharts(){
     responsive:true,
     maintainAspectRatio:false,
     cutout:'58%',
-    layout:{padding:24},
+    layout:{padding:{top:62,right:55,bottom:36,left:55}},
     plugins:{
      legend:{
       position:'bottom',
@@ -253,21 +253,30 @@ function renderCharts(){
      },
      datalabels:{
       color:'#172033',
-      backgroundColor:'rgba(255,255,255,.92)',
+      backgroundColor:'rgba(255,255,255,.96)',
       borderColor:'#d0d5dd',
       borderWidth:1,
       borderRadius:6,
-      padding:5,
+      padding:{top:5,bottom:5,left:7,right:7},
       anchor:'end',
       align:'end',
-      offset:5,
-      clamp:true,
+      offset:(ctx)=>{
+       const value=ctx.dataset.data[ctx.dataIndex];
+       const sum=ctx.dataset.data.reduce((a,b)=>a+b,0);
+       const pct=sum ? value*100/sum : 0;
+       if(pct < 0.75) return 54;
+       if(pct < 1.5) return 34;
+       if(pct < 3) return 18;
+       return 7;
+      },
+      clamp:false,
+      clip:false,
       formatter:(value,ctx)=>{
        const sum=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
        const pct=sum ? (value*100/sum).toFixed(2) : '0.00';
-       return `${value}\n${pct}%`;
+       return `${value} • ${pct}%`;
       },
-      font:{weight:'bold',size:11}
+      font:{weight:'bold',size:10}
      },
      tooltip:{
       callbacks:{
