@@ -7,6 +7,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
 <style>
 body{font-family:Arial,sans-serif;margin:0;background:#f4f7fb;color:#172033}
@@ -87,6 +88,8 @@ th{background:#54206e;color:white;position:sticky;top:0}
 </div>
 
 <script>
+Chart.register(ChartDataLabels);
+
 const FILE='Aircraft_Maintenance_Data.xlsx';
 
 const STATUS_ORDER=[
@@ -221,11 +224,50 @@ function renderCharts(){
    options:{
     responsive:true,
     maintainAspectRatio:false,
-    cutout:'62%',
+    cutout:'58%',
+    layout:{padding:24},
     plugins:{
      legend:{
       position:'bottom',
-      labels:{padding:14,usePointStyle:true}
+      labels:{
+       padding:14,
+       usePointStyle:true,
+       generateLabels:(chart)=>{
+        const ds=chart.data.datasets[0];
+        const sum=ds.data.reduce((a,b)=>a+b,0);
+        return chart.data.labels.map((label,i)=>{
+         const value=ds.data[i];
+         const pct=sum ? (value*100/sum).toFixed(2) : '0.00';
+         return {
+          text:`${label} = ${value} (${pct}%)`,
+          fillStyle:ds.backgroundColor[i],
+          strokeStyle:ds.backgroundColor[i],
+          fontColor:'#172033',
+          hidden:false,
+          index:i,
+          pointStyle:'circle'
+         };
+        });
+       }
+      }
+     },
+     datalabels:{
+      color:'#172033',
+      backgroundColor:'rgba(255,255,255,.92)',
+      borderColor:'#d0d5dd',
+      borderWidth:1,
+      borderRadius:6,
+      padding:5,
+      anchor:'end',
+      align:'end',
+      offset:5,
+      clamp:true,
+      formatter:(value,ctx)=>{
+       const sum=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
+       const pct=sum ? (value*100/sum).toFixed(2) : '0.00';
+       return `${value}\n${pct}%`;
+      },
+      font:{weight:'bold',size:11}
      },
      tooltip:{
       callbacks:{
