@@ -271,6 +271,12 @@ function renderCharts(){
       },
       clamp:false,
       clip:false,
+      display:(ctx)=>{
+       const value=ctx.dataset.data[ctx.dataIndex];
+       const sum=ctx.dataset.data.reduce((a,b)=>a+b,0);
+       const pct=sum ? value*100/sum : 0;
+       return pct >= 3;
+      },
       formatter:(value,ctx)=>{
        const sum=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
        const pct=sum ? (value*100/sum).toFixed(2) : '0.00';
