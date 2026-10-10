@@ -172,11 +172,15 @@ th{
 
 <select id="aircraft"></select>
 
-<select id="status"></select>
+<select id="status" aria-label="Status"></select>
+<label>Order Type (G)<br><select id="orderType" aria-label="Order Type column G"></select></label>
+<label>Working Group (R)<br><select id="workingGroup" aria-label="Working Group column R"></select></label>
+<label>External Ident. (U)<br><select id="externalIdent" aria-label="External Ident. column U"></select></label>
+<label>AD Note (Q)<br><select id="adNote" aria-label="AD Note column Q"></select></label>
 
 <input
   id="search"
-  placeholder="ค้นหา Order / Activity / Revision / Description / Work Center"
+  placeholder="ค้นหา Order / Activity / Revision / Description / Work Center / AD Note / Order Type / Working Group / External Ident."
 >
 
 </div>
@@ -196,11 +200,14 @@ th{
 <th>Item</th>
 <th>Revision</th>
 <th>Order</th>
+<th>Order Type (G)</th>
 <th>Activity</th>
 <th>Oper.WorkCenter</th>
 <th>Description</th>
 <th>Status</th>
-<th>Working Group</th>
+<th>AD Note (Q)</th>
+<th>Working Group (R)</th>
+<th>External Ident. (U)</th>
 <th>Main WorkCtr</th>
 </tr>
 </thead>
@@ -294,6 +301,10 @@ function norm(row){
 
     order:row['Order'],
 
+    orderType:String(row.__columnG??'').trim(),
+
+    adNote:String(row.__columnQ??'').trim(),
+
     activity:row['Activity'],
 
     wc:row['Oper.WorkCenter'],
@@ -302,7 +313,9 @@ function norm(row){
 
     status:String(row['Syste']??'').trim(),
 
-    wg:row['Working Group'],
+    wg:String(row.__columnR??'').trim(),
+
+    externalIdent:String(row.__columnU??'').trim(),
 
     main:row['Main WorkCtr']
 
@@ -385,6 +398,22 @@ function syncStatus(){
    FILTER
    ========================================================= */
 
+function syncExtraFilters(){
+  for(const [id,key,label] of [
+    ['orderType','orderType','ALL ORDER TYPES'],
+    ['adNote','adNote','ALL AD NOTES'],
+    ['workingGroup','wg','ALL WORKING GROUPS'],
+    ['externalIdent','externalIdent','ALL EXTERNAL IDENT.']
+  ]){
+    const select=$(id), old=select.value;
+    const values=[...new Set(current().map(r=>r[key]))]
+      .sort((a,b)=>a.localeCompare(b,'th',{numeric:true}));
+    select.innerHTML='<option value="">'+label+'</option>'+
+      values.map(v=>`<option value="${esc(JSON.stringify(v))}">${esc(v || '(ว่าง)')}</option>`).join('');
+    if(values.some(v=>JSON.stringify(v)===old)) select.value=old;
+  }
+}
+
 function filtered(){
 
   let q=
@@ -396,9 +425,17 @@ function filtered(){
   let s=
     $('status').value;
 
+  const type=$('orderType').value, note=$('adNote').value;
+  const group=$('workingGroup').value, external=$('externalIdent').value;
+
   return current().filter(r=>
 
     (!s || r.status===s)
+
+    && (!type || r.orderType===JSON.parse(type))
+    && (!note || r.adNote===JSON.parse(note))
+    && (!group || r.wg===JSON.parse(group))
+    && (!external || r.externalIdent===JSON.parse(external))
 
     &&
 
@@ -410,7 +447,10 @@ function filtered(){
       r.desc,
       r.wc,
       r.wg,
-      r.main
+      r.main,
+      r.adNote,
+      r.orderType,
+      r.externalIdent
 
     ].some(v=>
 
@@ -950,6 +990,8 @@ function render(){
         <b>${esc(r.order)}</b>
        </td>
 
+       <td>${esc(r.orderType)}</td>
+
        <td>${esc(r.activity)}</td>
 
        <td>${esc(r.wc)}</td>
@@ -962,7 +1004,11 @@ function render(){
         </span>
        </td>
 
+       <td>${esc(r.adNote)}</td>
+
        <td>${esc(r.wg)}</td>
+
+       <td>${esc(r.externalIdent)}</td>
 
        <td>${esc(r.main)}</td>
 
@@ -1047,6 +1093,17 @@ async function load(){
         );
 
 
+      // Read physical columns G and Q: Q currently shares the Priority header with P.
+      const physicalRows=XLSX.utils.sheet_to_json(wb.Sheets[n],{
+        range:6, header:1, defval:'', blankrows:false
+      }).slice(1);
+      rows.forEach((row,i)=>{
+        row.__columnG=physicalRows[i]?.[6] ?? '';
+        row.__columnQ=physicalRows[i]?.[16] ?? '';
+        row.__columnR=physicalRows[i]?.[17] ?? '';
+        row.__columnU=physicalRows[i]?.[20] ?? '';
+      });
+
       /*
          เก็บเฉพาะ Sheet
          ที่มีข้อมูล Order
@@ -1114,6 +1171,7 @@ async function load(){
 
 
     syncStatus();
+  syncExtraFilters();
 
 
     $('updated').textContent=
@@ -1168,6 +1226,7 @@ $('aircraft').onchange=()=>{
   page=1;
 
   syncStatus();
+  syncExtraFilters();
 
   render();
 
@@ -1182,6 +1241,10 @@ $('status').onchange=()=>{
 
 };
 
+
+for(const id of ['orderType','adNote','workingGroup','externalIdent']){
+  $(id).onchange=()=>{page=1;render();};
+}
 
 $('search').oninput=()=>{
 
