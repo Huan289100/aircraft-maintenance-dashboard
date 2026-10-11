@@ -244,7 +244,7 @@ const FILE='Aircraft_Maintenance_Data.xlsx';
 const STATUS_ORDER=[
   'REL',
   'TECO',
-  'Wait LB-B TECO',
+  'Wait LB-B Teco',
   'Wait LAE Sign',
   'Wait MECH Sign'
 ];
@@ -252,7 +252,7 @@ const STATUS_ORDER=[
 const STATUS_COLORS={
   'REL':'#16a34a',
   'TECO':'#dc2626',
-  'Wait LB-B TECO':'#f59e0b',
+  'Wait LB-B Teco':'#f59e0b',
   'Wait LAE Sign':'#2563eb',
   'Wait MECH Sign':'#9333ea'
 };
@@ -291,6 +291,13 @@ function esc(v){
    NORMALIZE EXCEL ROW
    ========================================================= */
 
+function normalizeStatus(value){
+  const status=String(value??'').trim();
+  return /^wait\s+lb-b\s+teco$/i.test(status)
+    ? 'Wait LB-B Teco'
+    : status;
+}
+
 function norm(row){
 
   return{
@@ -311,7 +318,7 @@ function norm(row){
 
     desc:row['Description'],
 
-    status:String(row['Syste']??'').trim(),
+    status:normalizeStatus(row['Syste']),
 
     wg:String(row.__columnR??'').trim(),
 
@@ -1283,3 +1290,4 @@ load();
 
 </body>
 </html>
+
