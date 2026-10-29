@@ -88,6 +88,9 @@ body{
   margin:auto
 }
 
+.highlight{margin-top:20px;padding:16px;text-align:left;background:#fff8df;border-left:4px solid #d5a526;border-radius:10px;overflow-wrap:anywhere}
+.highlight h3{margin:0 0 12px;color:#54206e;font-size:18px}
+.highlight p{margin:8px 0;white-space:pre-wrap;line-height:1.6}
 .tablebox{
   background:white;
   border-radius:14px;
@@ -263,6 +266,7 @@ const STATUS_COLORS={
    ========================================================= */
 
 let book={};
+let highlightText={};
 let page=1;
 let per=15;
 let charts={};
@@ -514,7 +518,7 @@ function renderCharts(){
         <div class="chartwrap">
           <canvas id="chart_${esc(n)}"></canvas>
         </div>
-
+        ${highlightText[n] ? '<section class="highlight"><h3>📌 HIGHLIGHT — HS-'+esc(n)+'</h3>'+highlightText[n].map(line=>'<p>'+esc(line)+'</p>').join('')+'</section>' : ''}
       </div>
 
     `).join('');
@@ -1084,7 +1088,17 @@ async function load(){
        จาก Excel โดยอัตโนมัติ
     */
 
+    book={};
+    highlightText={};
+    // TEXT sheets contain commentary, never aircraft orders.
+    wb.SheetNames.filter(n=>/^TEXT\s+/i.test(n)).forEach(n=>{
+      const aircraft=n.replace(/^TEXT\s+/i,'').trim().replace(/^HS-/i,'').toUpperCase();
+      highlightText[aircraft]=XLSX.utils.sheet_to_json(wb.Sheets[n],{
+        header:1,defval:'',blankrows:false
+      }).map(row=>row.map(v=>String(v).trim()).filter(Boolean).join(' — ')).filter(Boolean);
+    });
     wb.SheetNames.forEach(n=>{
+      if(/^TEXT\s+/i.test(n)) return;
 
       let rows=
 
@@ -1290,4 +1304,5 @@ load();
 
 </body>
 </html>
+
 
