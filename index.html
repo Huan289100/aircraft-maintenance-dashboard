@@ -88,9 +88,17 @@ body{
   margin:auto
 }
 
-.highlight{margin-top:20px;padding:16px;text-align:left;background:#fff8df;border-left:4px solid #d5a526;border-radius:10px;overflow-wrap:anywhere}
-.highlight h3{margin:0 0 12px;color:#54206e;font-size:18px}
-.highlight p{margin:8px 0;white-space:pre-wrap;line-height:1.6}
+.highlight{margin-top:24px;text-align:left;background:#faf8fc;border:1px solid #e6dded;border-radius:14px;overflow:hidden;overflow-wrap:anywhere}
+.highlight h3{margin:0;padding:14px 18px;background:#54206e;color:#fff;font-size:17px;letter-spacing:.3px}
+.highlight-content{padding:6px 18px 18px;font-size:14px;line-height:1.75}
+.highlight h4{margin:20px 0 10px;color:#54206e;font-size:15px;padding-bottom:7px;border-bottom:2px solid #e2c478}
+.highlight p{margin:9px 0;white-space:pre-wrap}
+.highlight .highlight-note{padding:12px 14px;background:#fff4d1;border-left:3px solid #c69c32;border-radius:6px;font-weight:600}
+.highlight .highlight-meta{font-size:13px;color:#596377}
+.timeline-row{display:grid;grid-template-columns:76px minmax(0,1fr);gap:12px;padding:11px 0;border-bottom:1px solid #e7e1ed}
+.timeline-row:last-child{border-bottom:0}
+.timeline-date{font-weight:700;color:#54206e;font-size:12px;padding-top:2px}
+.timeline-text{white-space:pre-wrap}
 .tablebox{
   background:white;
   border-radius:14px;
@@ -294,6 +302,25 @@ function esc(v){
 /* =========================================================
    NORMALIZE EXCEL ROW
    ========================================================= */
+
+function renderHighlight(name){
+  const lines=(highlightText[name] || []).map(v=>String(v).trim()).filter(Boolean);
+  if(!lines.length) return '';
+  let inHighlight=false;
+  const content=lines.map(raw=>{
+    const line=raw.replace(/^#+\s*|\s*#+$/g,'').trim();
+    if(!line) return '';
+    if(/^#+/.test(raw)){
+      inHighlight=/WORK HIGHLIGHT/i.test(line);
+      return '<h4>'+esc(line)+'</h4>';
+    }
+    const date=line.match(/^(\d{1,2}\s*[A-Z]{3}\s*\d{2,4})\s*:\s*(.+)$/i);
+    if(date) return '<div class="timeline-row"><div class="timeline-date">'+esc(date[1])+'</div><div class="timeline-text">'+esc(date[2])+'</div></div>';
+    const cls=inHighlight ? 'highlight-note' : /^(EST\.|TOW IN|AIRCRAFT SERIAL|\()/i.test(line) ? 'highlight-meta' : '';
+    return '<p class="'+cls+'">'+esc(line)+'</p>';
+  }).join('');
+  return '<section class="highlight"><h3>HIGHLIGHT — HS-'+esc(name)+'</h3><div class="highlight-content">'+content+'</div></section>';
+}
 
 function normalizeStatus(value){
   const status=String(value??'').trim();
@@ -518,7 +545,7 @@ function renderCharts(){
         <div class="chartwrap">
           <canvas id="chart_${esc(n)}"></canvas>
         </div>
-        ${highlightText[n] ? '<section class="highlight"><h3>📌 HIGHLIGHT — HS-'+esc(n)+'</h3>'+highlightText[n].map(line=>'<p>'+esc(line)+'</p>').join('')+'</section>' : ''}
+        ${renderHighlight(n)}
       </div>
 
     `).join('');
