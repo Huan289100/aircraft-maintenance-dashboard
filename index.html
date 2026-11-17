@@ -912,8 +912,7 @@ function renderCharts(){
                       .toFixed(2)
                     : '0.00';
 
-                  return
-                    ` ${ctx.label}: ${ctx.raw} (${pct}%)`;
+                  return ` ${ctx.label}: ${ctx.raw} (${pct}%)`;
 
                 }
 
@@ -1122,7 +1121,16 @@ async function load(){
       const aircraft=n.replace(/^TEXT\s+/i,'').trim().replace(/^HS-/i,'').toUpperCase();
       highlightText[aircraft]=XLSX.utils.sheet_to_json(wb.Sheets[n],{
         header:1,defval:'',blankrows:false
-      }).map(row=>row.map(v=>String(v).trim()).filter(Boolean).join(' — ')).filter(Boolean);
+      }).map(row=>{
+        const seen=new Set();
+        return row.map(v=>String(v).trim()).filter(v=>{
+          if(!v) return false;
+          const key=v.replace(/\s+/g,' ').toLocaleLowerCase();
+          if(seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).join(' — ');
+      }).filter(Boolean);
     });
     wb.SheetNames.forEach(n=>{
       if(/^TEXT\s+/i.test(n)) return;
